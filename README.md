@@ -1,10 +1,24 @@
-# galvanis: Physics-based twist on a Tetris-like game
+# galvanis
 
-Vibe-coded, so shitty.
+Physics-driven falling-block prototype built with TypeScript, Vite, and Matter.js.
 
-You place falling bricks in a continuous universe with friction. 
+You place falling tetrominoes in a continuous world with friction. Conductive pieces can form
+a path between the two inner band walls; when that happens, the path flashes and the touched
+pieces burn away.
 
-Bricks are conductive. If a conductive path is formed between the left and right playground
-boundaries,  current flows through it. Any blocks traversed get burned and disappear.
- 
-Game preview: https://htmlpreview.github.io/?https://github.com/tonigi/galvanis/blob/main/game.html
+Live page: [tonigi.github.io/galvanis-game](https://tonigi.github.io/galvanis-game/)
+
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+## Production build
+
+```bash
+npm run build
+```
+
+The site is deployed automatically from [`main`](https://github.com/tonigi/galvanis-game/tree/main) via GitHub Actions and GitHub Pages.

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>galvanis</title>
+  </head>
+  <body>
+    <div class="wrap">
+      <div id="stage" class="panel stage"></div>
+
+      <aside class="sidebar">
+        <section id="hud" class="panel">
+          <div class="row"><strong>Controls</strong></div>
+          <div class="row">
+            <span class="kbd">←</span>/<span class="kbd">→</span> move
+            <span class="kbd">↑</span> rotate
+            <span class="kbd">↓</span> soft drop
+            <span class="kbd">Space</span> hard drop
+          </div>
+          <div class="row">
+            <button class="btn" id="resetBtn" type="button">Reset</button>
+            <button class="btn" id="pauseBtn" type="button">Pause</button>
+            <button class="btn" id="spawnBtn" type="button">Spawn</button>
+            <button class="btn" id="scanBtn" type="button">Scan &amp; Flash</button>
+          </div>
+          <div class="row stat">
+            Pieces: <span id="pieceCount">0</span> | Active: <span id="activeName">-</span>
+          </div>
+          <div class="row stat">State: <span id="gameState">Running</span></div>
+          <div class="footer">
+            Conductive paths that bridge the left and right band edges flash, then burn away.
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2 class="title">Settings</h2>
+          <div class="row">
+            <label>Gravity Y: <input id="gravityY" type="range" min="0" max="2" step="0.05" value="1" /></label>
+            <span id="gravityYVal" class="stat">1.00</span>
+          </div>
+          <div class="row">
+            <label>Friction: <input id="friction" type="range" min="0" max="0.2" step="0.005" value="0.08" /></label>
+            <span id="frictionVal" class="stat">0.080</span>
+          </div>
+          <div class="row">
+            <label>Restitution: <input id="rest" type="range" min="0" max="0.4" step="0.01" value="0.05" /></label>
+            <span id="restVal" class="stat">0.05</span>
+          </div>
+          <div class="row">
+            <label>Block Size: <input id="blockSize" type="range" min="16" max="48" step="2" value="30" /></label>
+            <span id="blockSizeVal" class="stat">30</span>
+          </div>
+          <div class="row">
+            <label>Lock Delay (ms): <input id="lockDelay" type="range" min="100" max="2000" step="50" value="500" /></label>
+            <span id="lockDelayVal" class="stat">500</span>
+          </div>
+          <div class="row">
+            <label><input id="sleeping" type="checkbox" checked /> Sleep settled bodies</label>
+          </div>
+          <div class="row">
+            <label><input id="freezeBlocks" type="checkbox" /> Freeze fallen blocks</label>
+          </div>
+          <div class="row">
+            <label>
+              Insulating piece chance:
+              <input id="insulatingChance" type="range" min="0" max="100" step="5" value="25" />
+            </label>
+            <span id="insulatingChanceVal" class="stat">25%</span>
+          </div>
+
+          <hr />
+
+          <h3 class="title title-small">Path Debug</h3>
+          <div class="row">
+            <label>Band half-width X: <input id="bandX" type="range" min="120" max="360" step="10" value="200" /></label>
+            <span id="bandXVal" class="stat">200</span>
+          </div>
+          <div class="row">
+            <label>Margin slack: <input id="marginSlack" type="range" min="0" max="80" step="2" value="10" /></label>
+            <span id="marginSlackVal" class="stat">10</span>
+          </div>
+          <div class="row">
+            <label><input id="showBand" type="checkbox" checked /> Show band &amp; boundaries</label>
+          </div>
+          <div class="row">
+            <label><input id="eraseOnPath" type="checkbox" checked /> Erase on path found</label>
+          </div>
+          <div class="footer">
+            The scan erases entire conductive tetrominoes touched by the path, then lets the rest settle again.
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
