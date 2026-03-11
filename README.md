@@ -2,6 +2,8 @@
 
 Physics-driven falling-block prototype built with TypeScript, Vite, and Matter.js.
 
+Shamelessly vibe-coded.
+
 You place falling tetrominoes in a continuous world with friction. Conductive pieces can form
 a path between the two inner band walls; when that happens, the path flashes and the touched
 pieces burn away.
