@@ -71,15 +71,19 @@
       <div class="row">
         <label><input id="freezeBlocks" type="checkbox" /> Freeze fallen blocks</label>
       </div>
+      <div class="row">
+        <label>Insulating piece chance: <input id="insulatingChance" type="range" min="0" max="100" step="5" value="25"/></label>
+        <span id="insulatingChanceVal" class="stat">25%</span>
+      </div>
       <hr/>
       <h3 class="title" style="font-size:16px">Path Debug</h3>
       <div class="row">
-        <label>Band half-width X: <input id="bandX" type="range" min="120" max="360" step="10" value="220"/></label>
-        <span id="bandXVal" class="stat">220</span>
+        <label>Band half-width X: <input id="bandX" type="range" min="120" max="360" step="10" value="200"/></label>
+        <span id="bandXVal" class="stat">200</span>
       </div>
       <div class="row">
-        <label>Margin slack: <input id="marginSlack" type="range" min="0" max="80" step="2" value="24"/></label>
-        <span id="marginSlackVal" class="stat">24</span>
+        <label>Margin slack: <input id="marginSlack" type="range" min="0" max="80" step="2" value="10"/></label>
+        <span id="marginSlackVal" class="stat">10</span>
       </div>
       <div class="row">
         <label><input id="showBand" type="checkbox" checked /> Show band & boundaries</label>
@@ -179,6 +183,7 @@
       blockSize: el('blockSize'), blockSizeVal: el('blockSizeVal'),
       lockDelay: el('lockDelay'), lockDelayVal: el('lockDelayVal'),
       sleeping: el('sleeping'), freezeBlocks: el('freezeBlocks'),
+      insulatingChance: el('insulatingChance'), insulatingChanceVal: el('insulatingChanceVal'),
       bandX: el('bandX'), bandXVal: el('bandXVal'),
       marginSlack: el('marginSlack'), marginSlackVal: el('marginSlackVal'),
       showBand: el('showBand'),
@@ -190,12 +195,13 @@
       ui.restVal.textContent = Number(ui.rest.value).toFixed(2);
       ui.blockSizeVal.textContent = ui.blockSize.value;
       ui.lockDelayVal.textContent = ui.lockDelay.value;
+      ui.insulatingChanceVal.textContent = ui.insulatingChance.value + '%';
       ui.bandXVal.textContent = ui.bandX.value;
       ui.marginSlackVal.textContent = ui.marginSlack.value;
     }
     syncLabels();
     ui.gravityY.addEventListener('input', e=>{ engine.gravity.y = parseFloat(e.target.value); syncLabels(); });
-    ;['friction','rest','blockSize','lockDelay','bandX','marginSlack'].forEach(k=> ui[k].addEventListener('input', ()=>{ syncLabels(); updateBandWalls(); }));
+    ;['friction','rest','blockSize','lockDelay','insulatingChance','bandX','marginSlack'].forEach(k=> ui[k].addEventListener('input', ()=>{ syncLabels(); updateBandWalls(); }));
     ui.sleeping.addEventListener('change', e=>{ engine.enableSleeping = !!e.target.checked; if(activePiece) Body.set(activePiece, 'isSleeping', false);});
     // Pieces
     const SHAPES = {
@@ -214,7 +220,7 @@
 
     function colorFor(name){ return ({I:'#32d5ff',O:'#ffd84a',T:'#a77dff',S:'#48e07a',Z:'#ff6e6e',J:'#4a8bff',L:'#ff9b41'})[name] || '#ccc'; }
 
-    function makePiece(name, x, y, size, friction, rest){
+    function makePiece(name, x, y, size, friction, rest, isInsulating){
       const cells = SHAPES[name];
       const xs = cells.map(c=>c[0]);
       const ys = cells.map(c=>c[1]);
@@ -226,18 +232,21 @@
       const parts = cells.map(([cx, cy])=>{
         const px = x + (cx*size - offsetX + size/2);
         const py = y + (cy*size - offsetY + size/2);
+        const color = colorFor(name);
         return Bodies.rectangle(px, py, size, size, {
           chamfer: { radius: size*0.15 },
           frictionAir: 0.01,
           friction: friction,
           restitution: rest,
-          render: { fillStyle: colorFor(name) }
+          render: isInsulating
+            ? { fillStyle: 'transparent', strokeStyle: color, lineWidth: Math.max(2, Math.round(size * 0.14)) }
+            : { fillStyle: color }
         });
       });
       const compound = Body.create({ parts });
       compound.frictionAir = 0.01;
       compound.angularDamping = 0.02;
-      compound.plugin = { isTetromino: true, name, frozen: false };
+      compound.plugin = { isTetromino: true, name, frozen: false, isInsulating };
       return compound;
     }
 
@@ -254,8 +263,10 @@
       const size = parseInt(ui.blockSize.value,10);
       const f = parseFloat(ui.friction.value);
       const r = parseFloat(ui.rest.value);
+      const insulatingChance = parseFloat(ui.insulatingChance.value) / 100;
+      const isInsulating = Math.random() < insulatingChance;
       const x = W/2; const y = 100;
-      const piece = makePiece(name, x, y, size, f, r);
+      const piece = makePiece(name, x, y, size, f, r, isInsulating);
       World.add(engine.world, piece);
       activePiece = piece;
       pieceCount += 1; el('pieceCount').textContent = pieceCount; el('activeName').textContent = name;
@@ -322,6 +333,7 @@
       const nodes = [];
       for(const b of bodies){
         if(!b.plugin || !b.plugin.isTetromino) continue; // only tetromino bodies
+        if(b.plugin.isInsulating) continue; // insulating bodies do not conduct paths
         const parts = (b.parts && b.parts.length>1) ? b.parts.slice(1) : [b];
         for(const p of parts){
           const bb = p.bounds;
