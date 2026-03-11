@@ -78,6 +78,10 @@
         <span id="bandXVal" class="stat">220</span>
       </div>
       <div class="row">
+        <label>Margin slack: <input id="marginSlack" type="range" min="0" max="80" step="2" value="24"/></label>
+        <span id="marginSlackVal" class="stat">24</span>
+      </div>
+      <div class="row">
         <label><input id="showBand" type="checkbox" checked /> Show band & boundaries</label>
       </div>
       <div class="row">
@@ -175,7 +179,9 @@
       blockSize: el('blockSize'), blockSizeVal: el('blockSizeVal'),
       lockDelay: el('lockDelay'), lockDelayVal: el('lockDelayVal'),
       sleeping: el('sleeping'), freezeBlocks: el('freezeBlocks'),
-      bandX: el('bandX'), bandXVal: el('bandXVal'), showBand: el('showBand'),
+      bandX: el('bandX'), bandXVal: el('bandXVal'),
+      marginSlack: el('marginSlack'), marginSlackVal: el('marginSlackVal'),
+      showBand: el('showBand'),
       eraseOnPath: el('eraseOnPath')
     };
     function syncLabels(){
@@ -185,10 +191,11 @@
       ui.blockSizeVal.textContent = ui.blockSize.value;
       ui.lockDelayVal.textContent = ui.lockDelay.value;
       ui.bandXVal.textContent = ui.bandX.value;
+      ui.marginSlackVal.textContent = ui.marginSlack.value;
     }
     syncLabels();
     ui.gravityY.addEventListener('input', e=>{ engine.gravity.y = parseFloat(e.target.value); syncLabels(); });
-    ;['friction','rest','blockSize','lockDelay','bandX'].forEach(k=> ui[k].addEventListener('input', ()=>{ syncLabels(); updateBandWalls(); }));
+    ;['friction','rest','blockSize','lockDelay','bandX','marginSlack'].forEach(k=> ui[k].addEventListener('input', ()=>{ syncLabels(); updateBandWalls(); }));
     ui.sleeping.addEventListener('change', e=>{ engine.enableSleeping = !!e.target.checked; if(activePiece) Body.set(activePiece, 'isSleeping', false);});
     // Pieces
     const SHAPES = {
@@ -345,8 +352,11 @@
       const { nodes, leftX, rightX } = gatherBlockPartsWithinBand();
       if(nodes.length === 0) return null;
       const adj = buildGraph(nodes);
-      const starts = nodes.filter(n=> n.bb.min.x <= leftX && n.bb.max.x >= leftX).map(n=>n.id);
-      const goals = new Set(nodes.filter(n=> n.bb.min.x <= rightX && n.bb.max.x >= rightX).map(n=>n.id));
+      const slack = parseFloat(ui.marginSlack.value);
+      const leftGoalX = leftX + slack;
+      const rightGoalX = rightX - slack;
+      const starts = nodes.filter(n=> n.bb.min.x <= leftGoalX).map(n=>n.id);
+      const goals = new Set(nodes.filter(n=> n.bb.max.x >= rightGoalX).map(n=>n.id));
       if(starts.length===0 || goals.size===0) return null;
       const prev = new Map();
       const q = [];
@@ -431,6 +441,12 @@
         ctx.globalAlpha = 0.8; ctx.strokeStyle = '#3aa0ff'; ctx.lineWidth = 2; ctx.setLineDash([6,6]);
         ctx.beginPath(); ctx.moveTo(leftX,0); ctx.lineTo(leftX,H); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(rightX,0); ctx.lineTo(rightX,H); ctx.stroke();
+        const slack = parseFloat(ui.marginSlack.value);
+        if(slack > 0){
+          ctx.globalAlpha = 0.5; ctx.strokeStyle = '#9fe870'; ctx.lineWidth = 1.5; ctx.setLineDash([4,4]);
+          ctx.beginPath(); ctx.moveTo(leftX + slack, 0); ctx.lineTo(leftX + slack, H); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(rightX - slack, 0); ctx.lineTo(rightX - slack, H); ctx.stroke();
+        }
         ctx.setLineDash([]);
         ctx.restore();
       }
