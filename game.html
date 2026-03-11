@@ -81,9 +81,6 @@
         <label><input id="showBand" type="checkbox" checked /> Show band & boundaries</label>
       </div>
       <div class="row">
-        <label><input id="solidBandWalls" type="checkbox" checked /> Make ±X boundaries solid</label>
-      </div>
-      <div class="row">
         <label><input id="eraseOnPath" type="checkbox" checked /> Erase on path found</label>
       </div>
       <div class="footer">Prototype: erases whole pieces that the path passes through. After the flash, any remaining pieces are unfrozen so they can settle.</div>
@@ -156,7 +153,6 @@
       if(bandWalls.left) World.remove(engine.world, bandWalls.left);
       if(bandWalls.right) World.remove(engine.world, bandWalls.right);
       bandWalls.left = bandWalls.right = null;
-      if(!ui.solidBandWalls || !ui.solidBandWalls.checked) return;
       const bandHalf = parseFloat(ui.bandX.value);
       const cx = W/2;
       const leftX = cx - bandHalf;
@@ -180,7 +176,7 @@
       lockDelay: el('lockDelay'), lockDelayVal: el('lockDelayVal'),
       sleeping: el('sleeping'), freezeBlocks: el('freezeBlocks'),
       bandX: el('bandX'), bandXVal: el('bandXVal'), showBand: el('showBand'),
-      solidBandWalls: el('solidBandWalls'), eraseOnPath: el('eraseOnPath')
+      eraseOnPath: el('eraseOnPath')
     };
     function syncLabels(){
       ui.gravityYVal.textContent = Number(ui.gravityY.value).toFixed(2);
@@ -194,8 +190,6 @@
     ui.gravityY.addEventListener('input', e=>{ engine.gravity.y = parseFloat(e.target.value); syncLabels(); });
     ;['friction','rest','blockSize','lockDelay','bandX'].forEach(k=> ui[k].addEventListener('input', ()=>{ syncLabels(); updateBandWalls(); }));
     ui.sleeping.addEventListener('change', e=>{ engine.enableSleeping = !!e.target.checked; if(activePiece) Body.set(activePiece, 'isSleeping', false);});
-    ui.solidBandWalls.addEventListener('change', updateBandWalls);
-
     // Pieces
     const SHAPES = {
       I: [[0,0],[1,0],[2,0],[3,0]],
@@ -245,18 +239,7 @@
       body.plugin.frozen = true;
       Body.setVelocity(body, { x: 0, y: 0 });
       Body.setAngularVelocity(body, 0);
-      Body.setSleeping(body, true);
-    }
-
-    function enforceFrozenTetrominoes(){
-      const bodies = Composite.allBodies(engine.world);
-      for(const b of bodies){
-        if(!b.plugin || !b.plugin.isTetromino || !b.plugin.frozen) continue;
-        if(b.isSleeping) continue;
-        Body.setVelocity(b, { x: 0, y: 0 });
-        Body.setAngularVelocity(b, 0);
-        Body.setSleeping(b, true);
-      }
+      Body.setStatic(body, true);
     }
 
     function spawnRandom(){
@@ -317,7 +300,6 @@
         if(keyState.has('ArrowDown')) Body.applyForce(activePiece, activePiece.position, { x: 0, y: impulse*2 });
         considerLocking();
       }
-      enforceFrozenTetrominoes();
     });
 
     // === PATH-FIND & FLASH (debug) ===
