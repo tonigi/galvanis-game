@@ -39,6 +39,7 @@
           <button class="btn" id="scanBtn">Scan & Flash</button>
         </div>
         <div class="row stat">Pieces: <span id="pieceCount">0</span> &nbsp; | &nbsp; Active: <span id="activeName">—</span></div>
+        <div class="row stat">State: <span id="gameState">Running</span></div>
         <div class="footer">Path-debug: looks for a solid path from −X to +X inside the band; flashes then erases touched pieces.</div>
       </div>
     </div>
@@ -176,6 +177,7 @@
     const el = id => document.getElementById(id);
     const pieceCountEl = el('pieceCount');
     const activeNameEl = el('activeName');
+    const gameStateEl = el('gameState');
     const ui = {
       gravityY: el('gravityY'), gravityYVal: el('gravityYVal'),
       friction: el('friction'), frictionVal: el('frictionVal'),
@@ -217,6 +219,8 @@
 
     let pieceCount = 0;
     let activePiece = null;
+    let gameOver = false;
+    const SPAWN_Y = 100;
 
     function colorFor(name){ return ({I:'#32d5ff',O:'#ffd84a',T:'#a77dff',S:'#48e07a',Z:'#ff6e6e',J:'#4a8bff',L:'#ff9b41'})[name] || '#ccc'; }
 
@@ -258,18 +262,41 @@
       Body.setStatic(body, true);
     }
 
+    function setGameOver(){
+      gameOver = true;
+      activePiece = null;
+      firstContactTime = null;
+      isResolvingTurn = false;
+      isSettlingAfterFlash = false;
+      settledSince = null;
+      activeNameEl.textContent = '—';
+      gameStateEl.textContent = 'Game Over';
+    }
+
+    function isNearSpawnHeight(body){
+      const size = parseInt(ui.blockSize.value, 10);
+      return body && body.bounds && body.bounds.min.y <= SPAWN_Y + size * 1.25;
+    }
+
+    function hasTopOutTetromino(){
+      const bodies = Composite.allBodies(engine.world);
+      return bodies.some(b => b.plugin && b.plugin.isTetromino && isNearSpawnHeight(b));
+    }
+
     function spawnRandom(){
+      if(gameOver) return;
       const name = NAMES[Math.floor(Math.random()*NAMES.length)];
       const size = parseInt(ui.blockSize.value,10);
       const f = parseFloat(ui.friction.value);
       const r = parseFloat(ui.rest.value);
       const insulatingChance = parseFloat(ui.insulatingChance.value) / 100;
       const isInsulating = Math.random() < insulatingChance;
-      const x = W/2; const y = 100;
+      const x = W/2; const y = SPAWN_Y;
       const piece = makePiece(name, x, y, size, f, r, isInsulating);
       World.add(engine.world, piece);
       activePiece = piece;
       pieceCount += 1; el('pieceCount').textContent = pieceCount; el('activeName').textContent = name;
+      gameStateEl.textContent = 'Running';
       Body.setVelocity(piece, { x:(Math.random()-0.5)*0.5, y:0 });
     }
 
@@ -280,7 +307,7 @@
     let settledSince = null;
 
     function startNextTurn(){
-      if(activePiece || isResolvingTurn) return;
+      if(gameOver || activePiece || isResolvingTurn) return;
       spawnRandom();
     }
 
@@ -292,16 +319,21 @@
     }
 
     function considerLocking(){
-      if(!activePiece || isResolvingTurn) return;
+      if(!activePiece || isResolvingTurn || gameOver) return;
       const onGround = firstContactTime !== null;
       const delay = parseInt(ui.lockDelay.value,10);
       if(onGround && activePiece.speed < 0.4){
         const elapsed = performance.now() - firstContactTime;
         if(elapsed >= delay){
           if(ui.freezeBlocks.checked){ freezeTetromino(activePiece); }
+          const lockedPiece = activePiece;
           activePiece = null;
           el('activeName').textContent = '—';
           firstContactTime = null;
+          if(isNearSpawnHeight(lockedPiece)){
+            setGameOver();
+            return;
+          }
           isResolvingTurn = true;
           triggerScanAndFlash();
         }
@@ -322,15 +354,14 @@
     window.addEventListener('keydown', (e)=>{
       keyState.add(e.code);
       if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code)) e.preventDefault();
-      if(e.code === 'ArrowUp') rotateActive();
       if(e.code === 'Space') hardDrop();
     });
     window.addEventListener('keyup', (e)=> keyState.delete(e.code));
 
-    function rotateActive(){ if(activePiece){ Body.rotate(activePiece, Math.PI/2); Body.setAngularVelocity(activePiece, 0);} }
     function hardDrop(){ if(activePiece){ Body.applyForce(activePiece, activePiece.position, { x: 0, y: 0.08 }); } }
 
     Events.on(runner, 'tick', ()=>{
+      if(gameOver) return;
       if(isResolvingTurn && flash.points && flash.until && performance.now() >= flash.until){
         finishFlash();
       }
@@ -339,6 +370,10 @@
           if(settledSince === null) settledSince = performance.now();
           if(performance.now() - settledSince >= 250){
             sleepSettledTetrominoes();
+            if(hasTopOutTetromino()){
+              setGameOver();
+              return;
+            }
             resumeAfterTurnResolution();
           }
         } else {
@@ -352,6 +387,7 @@
         if(keyState.has('ArrowLeft')) Body.applyForce(activePiece, activePiece.position, { x: -impulse, y: 0 });
         if(keyState.has('ArrowRight')) Body.applyForce(activePiece, activePiece.position, { x: impulse, y: 0 });
         if(keyState.has('ArrowDown')) Body.applyForce(activePiece, activePiece.position, { x: 0, y: impulse*2 });
+        if(keyState.has('ArrowUp')) Body.setAngularVelocity(activePiece, -0.18);
         considerLocking();
       }
     });
@@ -582,7 +618,7 @@
       makeWalls();
       updateBandWalls();
       pieceCount = 0; el('pieceCount').textContent = '0';
-      activePiece = null; el('activeName').textContent = '—'; firstContactTime = null; isResolvingTurn = false; isSettlingAfterFlash = false; settledSince = null;
+      activePiece = null; el('activeName').textContent = '—'; firstContactTime = null; isResolvingTurn = false; isSettlingAfterFlash = false; settledSince = null; gameOver = false; gameStateEl.textContent = 'Running';
       if(flashTimer !== null){
         clearTimeout(flashTimer);
         flashTimer = null;
