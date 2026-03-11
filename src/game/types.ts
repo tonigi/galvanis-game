@@ -50,6 +50,7 @@ export interface ToggleControl {
 
 export interface UiRefs {
   stage: HTMLDivElement;
+  gameOverOverlay: HTMLDivElement;
   pieceCount: HTMLElement;
   activeName: HTMLElement;
   gameState: HTMLElement;

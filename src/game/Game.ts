@@ -667,6 +667,7 @@ export class GalvanisGame {
   }
 
   private updateStatusLabel(): void {
+    this.ui.gameOverOverlay.hidden = !this.gameOver;
     this.ui.gameState.textContent = this.gameOver
       ? "Game Over"
       : this.isPaused

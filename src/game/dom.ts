@@ -26,6 +26,7 @@ function toggleControl(inputId: string) {
 export function getUiRefs(): UiRefs {
   return {
     stage: requiredElement<HTMLDivElement>("stage"),
+    gameOverOverlay: requiredElement<HTMLDivElement>("gameOverOverlay"),
     pieceCount: requiredElement("pieceCount"),
     activeName: requiredElement("activeName"),
     gameState: requiredElement("gameState"),
