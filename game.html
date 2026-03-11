@@ -8,9 +8,10 @@
     html, body { height: 100%; margin: 0; overflow: hidden; background: #0f1220; color: #e7e9ee; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
     .wrap { display: grid; grid-template-columns: 1fr 360px; gap: 16px; padding: 16px; height: 100vh; box-sizing: border-box; }
     .panel { background: #151933; border: 1px solid #22274d; border-radius: 16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+    .sidebar { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
     .title { font-weight: 800; letter-spacing: 0.4px; margin: 0 0 12px; font-size: 20px; }
     #stage { position: relative; padding: 0; background: radial-gradient(1000px 500px at 50% -10%, #1a1f3d 0%, #0f1220 60%); border-radius: 16px; overflow: hidden; min-height: 0; }
-    #hud { position:absolute; left: 12px; top: 12px; background: rgba(10,12,24,.55); border: 1px solid rgba(255,255,255,.08); padding: 10px 12px; border-radius: 12px; backdrop-filter: blur(6px); font-size: 12px; z-index: 10; }
+    #hud { font-size: 12px; }
     .kbd { display:inline-block; border:1px solid #3a3f73; border-bottom-width:2px; padding: 2px 6px; border-radius: 6px; background:#0c1030; font-weight:700; }
     .row { margin-bottom: 10px; }
     .btn { appearance: none; border: 1px solid #2a2f5a; border-bottom-width: 2px; background: #0f143d; color: #e7e9ee; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-weight: 700; margin-right: 8px; }
@@ -21,10 +22,12 @@
     #stage canvas { position: absolute; inset: 0; }
   </style>
 </head>
-<body>
+  <body>
   <div class="wrap">
-    <div id="stage" class="panel">
-      <div id="hud">
+    <div id="stage" class="panel"></div>
+
+    <div class="sidebar">
+      <div id="hud" class="panel">
         <div class="row"><strong>Controls</strong></div>
         <div class="row">
           <span class="kbd">←</span>/<span class="kbd">→</span> move &nbsp; 
@@ -42,9 +45,8 @@
         <div class="row stat">State: <span id="gameState">Running</span></div>
         <div class="footer">Path-debug: looks for a solid path from −X to +X inside the band; flashes then erases touched pieces.</div>
       </div>
-    </div>
 
-    <div class="panel">
+      <div class="panel">
       <h2 class="title">Settings</h2>
       <div class="row">
         <label>Gravity Y: <input id="gravityY" type="range" min="0" max="2" step="0.05" value="1"/></label>
@@ -93,6 +95,7 @@
         <label><input id="eraseOnPath" type="checkbox" checked /> Erase on path found</label>
       </div>
       <div class="footer">Prototype: erases whole pieces that the path passes through. After the flash, any remaining pieces are unfrozen so they can settle.</div>
+      </div>
     </div>
   </div>
 
